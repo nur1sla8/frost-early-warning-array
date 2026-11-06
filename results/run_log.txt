@@ -1,0 +1,279 @@
+{
+  "n_obs": 53734,
+  "n_nights_complete": 4282,
+  "train_nights": 1004,
+  "train_events": 294,
+  "val_nights": 497,
+  "val_events": 163,
+  "test_nights": 492,
+  "test_events": 126,
+  "bootstrap_test_maxF1": {
+    "T only": {
+      "precision": [
+        0.59,
+        0.727
+      ],
+      "recall": [
+        0.853,
+        0.952
+      ],
+      "F1": [
+        0.709,
+        0.814
+      ],
+      "lead_median_h": [
+        3.0,
+        6.0
+      ]
+    },
+    "T + cooling rate": {
+      "precision": [
+        0.59,
+        0.727
+      ],
+      "recall": [
+        0.853,
+        0.952
+      ],
+      "F1": [
+        0.709,
+        0.814
+      ],
+      "lead_median_h": [
+        3.0,
+        6.0
+      ]
+    },
+    "D + convergence": {
+      "precision": [
+        0.226,
+        0.31
+      ],
+      "recall": [
+        0.858,
+        0.962
+      ],
+      "F1": [
+        0.361,
+        0.465
+      ],
+      "lead_median_h": [
+        6.0,
+        6.0
+      ]
+    },
+    "T + Td": {
+      "precision": [
+        0.613,
+        0.763
+      ],
+      "recall": [
+        0.744,
+        0.873
+      ],
+      "F1": [
+        0.688,
+        0.797
+      ],
+      "lead_median_h": [
+        3.0,
+        6.0
+      ]
+    },
+    "T + rate + Td": {
+      "precision": [
+        0.613,
+        0.763
+      ],
+      "recall": [
+        0.744,
+        0.873
+      ],
+      "F1": [
+        0.688,
+        0.797
+      ],
+      "lead_median_h": [
+        3.0,
+        6.0
+      ]
+    }
+  },
+  "logistic_test_auc": {
+    "T": 0.9012,
+    "T+hleft": 0.9456,
+    "T+RT+hleft": 0.9453,
+    "T+RD+hleft": 0.9455,
+    "T+Td+hleft": 0.9519,
+    "T+Td+RT+hleft": 0.9517,
+    "T+Td+RT+RD+hleft": 0.9527,
+    "T+Td+RT+hleft+wind (needs anemometer)": 0.9512
+  },
+  "logistic_coef_per_unit": {
+    "T": {
+      "T": -0.475
+    },
+    "T+hleft": {
+      "T": -0.636,
+      "hleft": 0.486
+    },
+    "T+RT+hleft": {
+      "T": -0.638,
+      "RT": 0.253,
+      "hleft": 0.502
+    },
+    "T+RD+hleft": {
+      "T": -0.636,
+      "RD": 0.011,
+      "hleft": 0.487
+    },
+    "T+Td+hleft": {
+      "T": -0.586,
+      "Td": -0.142,
+      "hleft": 0.475
+    },
+    "T+Td+RT+hleft": {
+      "T": -0.588,
+      "Td": -0.139,
+      "RT": 0.231,
+      "hleft": 0.491
+    },
+    "T+Td+RT+RD+hleft": {
+      "T": -0.601,
+      "Td": -0.145,
+      "RT": 0.625,
+      "RD": -0.328,
+      "hleft": 0.476
+    },
+    "T+Td+RT+hleft+wind (needs anemometer)": {
+      "T": -0.595,
+      "Td": -0.14,
+      "RT": 0.227,
+      "hleft": 0.503,
+      "wind": -0.034
+    }
+  },
+  "tmin_regression": {
+    "coef_T18": 0.634,
+    "coef_Td18": 0.25,
+    "intercept": -3.744,
+    "test_rmse": 2.134,
+    "test_bias": -0.072,
+    "test_resid_p90_abs": 3.458,
+    "test_rmse_T18_only": 2.486
+  },
+  "logistic_test_auc_by_wind": {
+    "calm<=1m/s": {
+      "nights": 985,
+      "events": 318,
+      "T+hleft": 0.9446,
+      "T+RT+hleft": 0.9444,
+      "T+Td+hleft": 0.9495,
+      "T+Td+RT+RD+hleft": 0.9507
+    },
+    "windy": {
+      "nights": 1008,
+      "events": 265,
+      "T+hleft": 0.9495,
+      "T+RT+hleft": 0.9497,
+      "T+Td+hleft": 0.9553,
+      "T+Td+RT+RD+hleft": 0.9565
+    }
+  },
+  "onset_timing_ols": {
+    "n_events": 359,
+    "formula": "onset_hour ~ 1 + T21 + RT(18->21) + Td21",
+    "coef": {
+      "const": 25.018,
+      "T21": 0.98,
+      "RT": 0.276,
+      "Td21": 0.012
+    },
+    "ci95_RT": [
+      -0.106,
+      0.659
+    ],
+    "ci95_T21": [
+      0.845,
+      1.124
+    ]
+  },
+  "chosen_params": {
+    "T only | watch": [
+      4.0
+    ],
+    "T only | maxF1": [
+      3.0
+    ],
+    "cooling rate only | watch": [
+      -1.0
+    ],
+    "cooling rate only | maxF1": [
+      -1.0
+    ],
+    "T + cooling rate | watch": [
+      4.0,
+      -1.0
+    ],
+    "T + cooling rate | maxF1": [
+      3.0,
+      -1.0
+    ],
+    "D + convergence | watch": [
+      13.0,
+      -1.0
+    ],
+    "D + convergence | maxF1": [
+      10.0,
+      -1.0
+    ],
+    "T + Td | watch": [
+      4.0,
+      1.0
+    ],
+    "T + Td | maxF1": [
+      3.0,
+      0.0
+    ],
+    "T + rate + Td | watch": [
+      4.0,
+      -1.0,
+      1.0
+    ],
+    "T + rate + Td | maxF1": [
+      3.0,
+      -1.0,
+      0.0
+    ],
+    "linear projection | maxF1": [
+      3.0
+    ]
+  }
+}
+           family  mode           params split  TP  FN  FP  TN  precision  recall    F1  false_alarm_ratio  false_alarm_rate  lead_median_h  lead_ge6h_share
+           T only watch           (4.0,)   val 157   6 100 234      0.611   0.963 0.748              0.389             0.299            3.0            0.459
+           T only watch           (4.0,)  test 118   8  91 275      0.565   0.937 0.704              0.435             0.249            3.0            0.483
+           T only maxF1           (3.0,)   val 147  16  63 271      0.700   0.902 0.788              0.300             0.189            3.0            0.388
+           T only maxF1           (3.0,)  test 114  12  59 307      0.659   0.905 0.763              0.341             0.161            3.0            0.430
+cooling rate only watch          (-1.0,)   val 163   0 334   0      0.328   1.000 0.494              0.672             1.000            6.0            0.644
+cooling rate only watch          (-1.0,)  test 126   0 366   0      0.256   1.000 0.408              0.744             1.000            6.0            0.611
+cooling rate only maxF1          (-1.0,)   val 163   0 334   0      0.328   1.000 0.494              0.672             1.000            6.0            0.644
+cooling rate only maxF1          (-1.0,)  test 126   0 366   0      0.256   1.000 0.408              0.744             1.000            6.0            0.611
+ T + cooling rate watch      (4.0, -1.0)   val 157   6 100 234      0.611   0.963 0.748              0.389             0.299            3.0            0.459
+ T + cooling rate watch      (4.0, -1.0)  test 118   8  91 275      0.565   0.937 0.704              0.435             0.249            3.0            0.483
+ T + cooling rate maxF1      (3.0, -1.0)   val 147  16  63 271      0.700   0.902 0.788              0.300             0.189            3.0            0.388
+ T + cooling rate maxF1      (3.0, -1.0)  test 114  12  59 307      0.659   0.905 0.763              0.341             0.161            3.0            0.430
+  D + convergence watch     (13.0, -1.0)   val 159   4 314  20      0.336   0.975 0.500              0.664             0.940            6.0            0.642
+  D + convergence watch     (13.0, -1.0)  test 123   3 351  15      0.259   0.976 0.410              0.741             0.959            6.0            0.610
+  D + convergence maxF1     (10.0, -1.0)   val 150  13 274  60      0.354   0.920 0.511              0.646             0.820            6.0            0.620
+  D + convergence maxF1     (10.0, -1.0)  test 115  11 316  50      0.267   0.913 0.413              0.733             0.863            6.0            0.609
+           T + Td watch       (4.0, 1.0)   val 157   6  96 238      0.621   0.963 0.755              0.379             0.287            3.0            0.459
+           T + Td watch       (4.0, 1.0)  test 116  10  80 286      0.592   0.921 0.720              0.408             0.219            3.0            0.448
+           T + Td maxF1       (3.0, 0.0)   val 145  18  57 277      0.718   0.890 0.795              0.282             0.171            3.0            0.386
+           T + Td maxF1       (3.0, 0.0)  test 102  24  46 320      0.689   0.810 0.745              0.311             0.126            3.0            0.441
+    T + rate + Td watch (4.0, -1.0, 1.0)   val 157   6  96 238      0.621   0.963 0.755              0.379             0.287            3.0            0.459
+    T + rate + Td watch (4.0, -1.0, 1.0)  test 116  10  80 286      0.592   0.921 0.720              0.408             0.219            3.0            0.448
+    T + rate + Td maxF1 (3.0, -1.0, 0.0)   val 145  18  57 277      0.718   0.890 0.795              0.282             0.171            3.0            0.386
+    T + rate + Td maxF1 (3.0, -1.0, 0.0)  test 102  24  46 320      0.689   0.810 0.745              0.311             0.126            3.0            0.441
+linear projection maxF1           (3.0,)   val 130  33  58 276      0.691   0.798 0.741              0.309             0.174            3.0            0.415
+linear projection maxF1           (3.0,)  test  98  28  55 311      0.641   0.778 0.703              0.359             0.150            3.0            0.439
