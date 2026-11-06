@@ -1,0 +1,202 @@
+{
+ "18": [
+  {
+   "lo": 0,
+   "hi": 1,
+   "nights": 69,
+   "frost": 68
+  },
+  {
+   "lo": 1,
+   "hi": 2,
+   "nights": 100,
+   "frost": 93
+  },
+  {
+   "lo": 2,
+   "hi": 3,
+   "nights": 102,
+   "frost": 90
+  },
+  {
+   "lo": 3,
+   "hi": 4,
+   "nights": 85,
+   "frost": 68
+  },
+  {
+   "lo": 4,
+   "hi": 5,
+   "nights": 84,
+   "frost": 56
+  },
+  {
+   "lo": 5,
+   "hi": 6,
+   "nights": 105,
+   "frost": 61
+  },
+  {
+   "lo": 6,
+   "hi": 8,
+   "nights": 183,
+   "frost": 90
+  },
+  {
+   "lo": 8,
+   "hi": 10,
+   "nights": 169,
+   "frost": 40
+  }
+ ],
+ "21": [
+  {
+   "lo": 0,
+   "hi": 1,
+   "nights": 130,
+   "frost": 119
+  },
+  {
+   "lo": 1,
+   "hi": 2,
+   "nights": 112,
+   "frost": 81
+  },
+  {
+   "lo": 2,
+   "hi": 3,
+   "nights": 106,
+   "frost": 68
+  },
+  {
+   "lo": 3,
+   "hi": 4,
+   "nights": 103,
+   "frost": 44
+  },
+  {
+   "lo": 4,
+   "hi": 5,
+   "nights": 95,
+   "frost": 21
+  },
+  {
+   "lo": 5,
+   "hi": 6,
+   "nights": 103,
+   "frost": 13
+  },
+  {
+   "lo": 6,
+   "hi": 8,
+   "nights": 201,
+   "frost": 11
+  },
+  {
+   "lo": 8,
+   "hi": 10,
+   "nights": 181,
+   "frost": 2
+  }
+ ],
+ "0": [
+  {
+   "lo": 0,
+   "hi": 1,
+   "nights": 100,
+   "frost": 77
+  },
+  {
+   "lo": 1,
+   "hi": 2,
+   "nights": 104,
+   "frost": 62
+  },
+  {
+   "lo": 2,
+   "hi": 3,
+   "nights": 117,
+   "frost": 42
+  },
+  {
+   "lo": 3,
+   "hi": 4,
+   "nights": 122,
+   "frost": 17
+  },
+  {
+   "lo": 4,
+   "hi": 5,
+   "nights": 102,
+   "frost": 8
+  },
+  {
+   "lo": 5,
+   "hi": 6,
+   "nights": 115,
+   "frost": 2
+  },
+  {
+   "lo": 6,
+   "hi": 8,
+   "nights": 197,
+   "frost": 3
+  },
+  {
+   "lo": 8,
+   "hi": 10,
+   "nights": 176,
+   "frost": 0
+  }
+ ],
+ "3": [
+  {
+   "lo": 0,
+   "hi": 1,
+   "nights": 98,
+   "frost": 50
+  },
+  {
+   "lo": 1,
+   "hi": 2,
+   "nights": 111,
+   "frost": 31
+  },
+  {
+   "lo": 2,
+   "hi": 3,
+   "nights": 118,
+   "frost": 14
+  },
+  {
+   "lo": 3,
+   "hi": 4,
+   "nights": 120,
+   "frost": 2
+  },
+  {
+   "lo": 4,
+   "hi": 5,
+   "nights": 125,
+   "frost": 1
+  },
+  {
+   "lo": 5,
+   "hi": 6,
+   "nights": 109,
+   "frost": 0
+  },
+  {
+   "lo": 6,
+   "hi": 8,
+   "nights": 191,
+   "frost": 1
+  },
+  {
+   "lo": 8,
+   "hi": 10,
+   "nights": 193,
+   "frost": 0
+  }
+ ]
+}
