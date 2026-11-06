@@ -75,12 +75,7 @@ Full method, tables and limits: [`docs/RESEARCH.md`](docs/RESEARCH.md).
 | 3 NC | – | – |
 | 4 GND | GND | GND |
 
-```
- GPIO6 ──┬──────────── DHT22#1 VCC          GPIO7 ──┬──────────── DHT22#2 VCC
-         └─[4.7k]─┐                                 └─[4.7k]─┐
- GPIO4 ───────────┴─── DHT22#1 DATA         GPIO5 ───────────┴─── DHT22#2 DATA
- GND ───────────────── DHT22#1 GND          GND ───────────────── DHT22#2 GND
-```
+![Wiring: ESP32-S3 with two DHT22, pull-ups R1/R2 between VCC and DATA](schematics/wiring.svg)
 
 **Pins:**
 
@@ -219,6 +214,81 @@ quality,level,level_name,flags,send_fail_streak,calibrated,time_valid
 - `flags`: the bit field in `firmware/libraries/FrostCore/src/engine.h`.
 - Flash holds 2 × 256 KB ≈ 16 days at 5-min logging, and survives reboots.
 
+## Results
+
+### Archive study (done)
+
+Bishkek SYNOP, frost season 2005–2025. Thresholds were chosen on 2005–2014; the figures below are
+for the test years 2020–2025 (492 nights, 126 frost events). Details: [`docs/RESEARCH.md`](docs/RESEARCH.md).
+
+| Rule | Precision | Recall | F1 |
+|---|---|---|---|
+| T ≤ 3 °C | 0.66 | 0.90 | 0.76 |
+| T ≤ 3 °C and cooling ≥ 0.5 °C/h | 0.64 | 0.70 | 0.67 |
+| T ≤ 3 °C and cooling ≥ 1.0 °C/h | 0.69 | 0.39 | 0.50 |
+| Best gap + convergence rule (T − Td, R_D) | 0.27 | 0.91 | 0.41 |
+
+![F1 over temperature threshold and cooling-rate threshold](results/f1_T_rate.png)
+
+Lead time:
+
+- the median is 3 h at 3-hourly resolution;
+- 43 % of the warned events had 6 h or more;
+- the true lead is up to 3 h shorter, because the observations are 3 h apart.
+
+### Firmware verification (done, on PC)
+
+- 50/50 FrostCore unit tests pass.
+- The C++ engine and the Python reference agree on 36 040 replay steps (40 archive nights with injected
+  sensor faults).
+- The node and gateway sketches compile for ESP32-S3.
+
+### Hardware, bench and field measurements (not done yet)
+
+| Test ([`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)) | Result |
+|---|---|
+| Replay on the ESP32-S3 matches the reference | [to be measured] |
+| DHT22 #1 vs #2 co-location offset (°C, % RH) | [to be measured] |
+| RH over saturated NaCl (expected ≈ 75 %) | [to be measured] |
+| Step response time constant τ (s) | [to be measured] |
+| Cold-box run: WATCH → WARNING → CRITICAL → FROST | [to be measured] |
+| Nights logged / frost events / warnings issued, with lead time | [to be measured] |
+
+## Analysis Summary
+
+**Goals achieved:**
+
+- Dew point computed on board with a formula checked against a reference (≤ 0.05 °C error).
+- Warning thresholds derived from 20 years of station data instead of guessed numbers, with
+  an event-based evaluation split by year.
+- A tested answer to the research question for 3-hourly data: the cooling rate and dew-point
+  convergence did not improve warnings beyond the temperature level.
+- Firmware that handles sensor failures, spikes, a stuck sensor, a missing clock and reboots, with
+  a flash log and ESP-NOW telemetry.
+
+**Goals not achieved, and why:**
+
+- No hardware or field measurements yet: the sensors were not available during development.
+- The ESP-NOW network is untested: only one ESP32 is available.
+- Local thresholds (calibrated mode) need local nights with frost, which the remaining time may not
+  provide.
+
+**Improvements with more time or resources:**
+
+- A second ESP32 to test the gateway and the link.
+- A season of local measurements with an independent thermometer, to test whether 10–60 min cooling
+  rates add skill that the 3-hourly archive could not show.
+- A leaf-level or surface sensor (DS18B20 or IR) to measure what plants actually experience.
+- A cloud or sky-temperature sensor and an anemometer, to separate radiation nights from cold-air
+  advection.
+- A sensor with better RH near saturation, such as an SHT3x/SHT4x.
+
+## Media
+
+- Video demonstration: [link TBD]
+- Photos of the setup: `images/` [to be added after assembly]
+- Wiring diagram: [`schematics/wiring.svg`](schematics/wiring.svg)
+
 ## Limitations
 
 - Measures **air** temperature at sensor height, not leaf, bud or soil temperature.
@@ -241,6 +311,7 @@ firmware/
   frost_gateway/         ESP-NOW gateway sketch
   host_tests/            PC unit tests + replay_cli
 results/         outputs of analysis/threshold_study.py (tables, figures, report.json)
+schematics/      wiring diagram (wiring.svg)
 tools/           serial logger, HIL replay, replay comparison, dashboard.html
 ```
 
@@ -256,3 +327,8 @@ Data: Meteostat (CC BY-NC 4.0), originating from national weather services via N
 ## Individual contributions
 
 This project is done individually by Nurislam.
+
+## License
+
+Code and documentation: [MIT / educational use — to be chosen by the author before submission].
+The archive data are not redistributed here; Meteostat data are licensed CC BY-NC 4.0.
