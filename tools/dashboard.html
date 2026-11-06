@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frost Early-Warning</title>
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --ink: #1b1f24; --muted: #5d6673; --line: #e3e6ea;
+  --grid: #eef0f3; --t: #c2410c; --td: #2563eb; --d: #0f766e; --rate: #7c3aed;
+  --normal: #15803d; --watch: #b58100; --warning: #d9480f; --critical: #c92a2a; --frost: #4c3ac9; --unknown: #6b7280;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1216; --card: #171b21; --ink: #e8ebef; --muted: #9aa4b1; --line: #2a3038;
+    --grid: #20262d; --t: #fb923c; --td: #60a5fa; --d: #2dd4bf; --rate: #a78bfa;
+    --normal: #4ade80; --watch: #facc15; --warning: #fb923c; --critical: #f87171; --frost: #a5b4fc; --unknown: #9ca3af;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 14px 16px;
+  border-bottom: 1px solid var(--line); background: var(--card); }
+header h1 { font-size: 16px; margin: 0 auto 0 0; }
+button, label.btn { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--ink); cursor: pointer; }
+button:hover, label.btn:hover { border-color: var(--muted); }
+#source { color: var(--muted); font-size: 12px; }
+main { max-width: 1180px; margin: 0 auto; padding: 16px; display: grid; gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 340px; }
+@media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 10px; }
+#status { border-left: 6px solid var(--lvl, var(--unknown)); }
+#level { font-size: 30px; font-weight: 700; color: var(--lvl, var(--unknown)); line-height: 1.1; }
+#headline { font-size: 15px; margin: 4px 0 10px; }
+#why { margin: 0; padding-left: 18px; }
+#why li { margin: 2px 0; }
+.sub { color: var(--muted); font-size: 12px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.tile { background: var(--bg); border-radius: 8px; padding: 8px 10px; }
+.tile .k { color: var(--muted); font-size: 12px; }
+.tile .v { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile .u { color: var(--muted); font-size: 12px; margin-left: 2px; }
+.row { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px dashed var(--line); }
+.row:last-child { border-bottom: 0; }
+.row span:last-child { font-variant-numeric: tabular-nums; text-align: right; }
+.ok { color: var(--normal); } .bad { color: var(--critical); } .warn { color: var(--watch); }
+.chart-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+.seg button { padding: 3px 9px; font-size: 12px; }
+.seg button.on { background: var(--ink); color: var(--card); border-color: var(--ink); }
+svg { width: 100%; height: auto; display: block; }
+svg text { fill: var(--muted); font-size: 11px; }
+#empty { grid-column: 1 / -1; text-align: center; padding: 48px 16px; color: var(--muted); }
+.col { display: grid; gap: 16px; align-content: start; }
+.banner { grid-column: 1 / -1; padding: 8px 12px; border-radius: 8px; background: var(--bg);
+  border: 1px dashed var(--watch); color: var(--ink); font-size: 13px; display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Frost Early-Warning</h1>
+  <span id="source">no data</span>
+  <button id="connect" title="Chrome / Edge only">Connect ESP32</button>
+  <label class="btn">Open CSV log<input id="file" type="file" accept=".csv,.txt" hidden></label>
+</header>
+<main>
+  <div id="empty" class="card">Connect a node over USB (Chrome/Edge, Web Serial) or open a CSV log
+    written by <code>tools/serial_logger.py</code>, the node's <code>DUMP</code> command, or
+    <code>tools/simulate_node_log.py</code>.</div>
+  <div id="simBanner" class="banner">Simulated data (archive nights interpolated and run through the reference engine) — not a measurement.</div>
+
+  <div class="col" id="left" hidden>
+    <section class="card" id="status">
+      <div id="level">—</div>
+      <div id="headline"></div>
+      <ul id="why"></ul>
+      <p class="sub" id="context"></p>
+    </section>
+    <section class="card">
+      <div class="chart-head">
+        <h2>Temperature and dew point</h2>
+        <div class="seg" id="range"><button data-h="3">3 h</button><button data-h="6">6 h</button><button data-h="12" class="on">12 h</button><button data-h="0">all</button></div>
+      </div>
+      <div class="legend"><span><i style="background:var(--t)"></i>T air (fused)</span><span><i style="background:var(--td)"></i>Dew point T<sub>d</sub></span><span>dashed: WATCH / WARNING / CRITICAL / 0 °C</span></div>
+      <div id="chartT"></div>
+    </section>
+    <section class="card">
+      <h2>Gap to dew point and cooling rate</h2>
+      <div class="legend"><span><i style="background:var(--d)"></i>D = T − T<sub>d</sub>, °C</span><span><i style="background:var(--rate)"></i>R<sub>T</sub> 1 h, °C/h</span></div>
+      <div id="chartD"></div>
+    </section>
+  </div>
+
+  <div class="col" id="right" hidden>
+    <section class="card">
+      <h2>Now</h2>
+      <div class="tiles" id="tiles"></div>
+    </section>
+    <section class="card">
+      <h2>Sensors</h2>
+      <div id="sensors"></div>
+    </section>
+    <section class="card">
+      <h2>Data and link</h2>
+      <div id="health"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+"use strict";
+// ---- constants mirrored from firmware (FrostCore engine.h) ----
+const LEVELS = ["UNKNOWN", "NORMAL", "WATCH", "WARNING", "CRITICAL", "FROST"];
+const LEVEL_VAR = ["--unknown", "--normal", "--watch", "--warning", "--critical", "--frost"];
+const FLAGS = [
+  [0, "Sensor 1 failed or out of range"], [1, "Sensor 2 failed or out of range"],
+  [2, "Sensors disagree (> 1 °C or > 5 % RH) — using the colder sensor"], [3, "Spike rejected"],
+  [4, "Sensor output stuck"], [5, "RH ≥ 99.5 %: DHT22 near saturation, dew point less reliable"],
+  [6, "Clock not set — evaluated at any hour"], [7, "Daytime (outside 18:00–09:00): only FROST is reported"],
+  [8, "Cooling fast (R_T ≤ −1 °C/h) — context only"], [9, "Converging fast to dew point (R_D ≤ −1 °C/h) — context only"],
+  [10, "Dew point ≥ +1 °C: condensation releases heat and slows cooling"], [11, "Dew point below 0 °C"],
+  [12, "Not enough history for a trend yet"]];
+let TH = { watch: 4, warning: 3, critical: 2, frost: 0 };
+const TZ_OFFSET_S = 6 * 3600;  // Bishkek
+// Archive skill of each level (Bishkek SYNOP, test years 2020-2025, results/levels.csv)
+const SKILL = {
+  2: "On the archive (test years) WATCH preceded 94 % of frost nights; 44 % of WATCH nights stayed above 0 °C.",
+  3: "On the archive WARNING preceded 90 % of frost nights; 34 % of WARNING nights stayed above 0 °C.",
+  4: "On the archive CRITICAL preceded 75 % of frost nights; 29 % of CRITICAL nights stayed above 0 °C."};
+// Historical frequency at the city station (results/historical_frequency.json): context, not a forecast
+const HIST = {"18":[[0,1,69,68],[1,2,100,93],[2,3,102,90],[3,4,85,68],[4,5,84,56],[5,6,105,61],[6,8,183,90],[8,10,169,40]],
+"21":[[0,1,130,119],[1,2,112,81],[2,3,106,68],[3,4,103,44],[4,5,95,21],[5,6,103,13],[6,8,201,11],[8,10,181,2]],
+"0":[[0,1,100,77],[1,2,104,62],[2,3,117,42],[3,4,122,17],[4,5,102,8],[5,6,115,2],[6,8,197,3],[8,10,176,0]],
+"3":[[0,1,98,50],[1,2,111,31],[2,3,118,14],[3,4,120,2],[4,5,125,1],[5,6,109,0],[6,8,191,1],[8,10,193,0]]};
+
+let rows = [], hoursShown = 12, live = false, lastRx = 0;
+const $ = (id) => document.getElementById(id);
+const num = (v) => (v === undefined || v === "" || v === "nan" ? NaN : Number(v));
+const fmt = (v, d = 1) => (Number.isFinite(v) ? v.toFixed(d) : "—");
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+const COLS = "unix_ts,node_id,boot_id,seq,uptime_s,t1,rh1,ok1,t2,rh2,ok2,t,rh,td,tf,d,t_smooth,rt_1h,rd_1h,rt_3h,quality,level,level_name,flags,send_fail_streak,calibrated,time_valid".split(",");
+function parseRow(cols, parts) {
+  const r = {};
+  cols.forEach((c, i) => { r[c] = c === "level_name" ? parts[i] : num(parts[i]); });
+  return Number.isFinite(r.unix_ts) ? r : null;
+}
+
+// ---- CSV file ----
+$("file").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const text = await f.text();
+  const lines = text.split(/\r?\n/).filter((l) => l && !l.startsWith("#"));
+  let cols = COLS, start = 0;
+  if (lines[0] && lines[0].startsWith("unix_ts")) { cols = lines[0].split(","); start = 1; }
+  rows = [];
+  for (const l of lines.slice(start)) {
+    const line = l.startsWith("D,") ? l.slice(2) : l;
+    const r = parseRow(cols, line.split(","));
+    if (r) rows.push(r);
+  }
+  live = false;
+  $("source").textContent = `${f.name} · ${rows.length} rows`;
+  $("simBanner").style.display = /simulat/i.test(f.name) ? "block" : "none";
+  render();
+});
+
+// ---- Web Serial ----
+$("connect").addEventListener("click", async () => {
+  if (!("serial" in navigator)) { alert("Web Serial needs Chrome or Edge on desktop. Use 'Open CSV log' instead."); return; }
+  try {
+    const port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 115200 });
+    const enc = new TextEncoder();
+    const writer = port.writable.getWriter();
+    await writer.write(enc.encode(`TIME ${Math.floor(Date.now() / 1000)}\nSHOW\n`));
+    writer.releaseLock();
+    rows = []; live = true; $("simBanner").style.display = "none";
+    $("source").textContent = "live · waiting for the first sample (up to 60 s)";
+    const reader = port.readable.pipeThrough(new TextDecoderStream()).getReader();
+    let buf = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += value;
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+        const m = line.match(/watch=([-\d.]+) warning=([-\d.]+) critical=([-\d.]+) frost=([-\d.]+)/);
+        if (m) TH = { watch: +m[1], warning: +m[2], critical: +m[3], frost: +m[4] };
+        if (!line.startsWith("D,")) continue;
+        const r = parseRow(COLS, line.slice(2).split(","));
+        if (r) { rows.push(r); lastRx = Date.now(); $("source").textContent = `live · ${rows.length} samples`; render(); }
+      }
+    }
+  } catch (err) { $("source").textContent = "serial: " + err.message; }
+});
+setInterval(() => { if (live && rows.length) renderHealth(rows[rows.length - 1]); }, 5000);
+
+$("range").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  hoursShown = +b.dataset.h;
+  for (const x of $("range").children) x.classList.toggle("on", x === b);
+  render();
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+
+// ---- rendering ----
+function localHour(ts) { return Math.floor(((ts + TZ_OFFSET_S) % 86400) / 3600); }
+function localTime(ts) { return new Date((ts + TZ_OFFSET_S) * 1000).toISOString().slice(5, 16).replace("T", " "); }
+
+function explain(r) {
+  const why = [], lvl = r.level, ts = r.t_smooth;
+  if (lvl === 0) why.push("No trustworthy reading from either sensor — the level cannot be judged. Check wiring and power.");
+  if (lvl === 5) why.push(`Air temperature at the sensor is ${fmt(ts)} °C (10-min mean) — at or below 0 °C now. This is detection, not a forecast.`);
+  if (lvl >= 2 && lvl <= 4) {
+    const thr = lvl === 4 ? TH.critical : lvl === 3 ? TH.warning : TH.watch;
+    why.push(`Air temperature ${fmt(ts)} °C (10-min mean) is at or below the ${LEVELS[lvl]} threshold ${fmt(thr)} °C in the evening–night window.`);
+    if (ts > thr) why.push(`Holding ${LEVELS[lvl]} until T rises above ${fmt(thr + 0.5)} °C (hysteresis = DHT22 accuracy).`);
+  }
+  if (lvl === 1) why.push(`Air temperature ${fmt(ts)} °C is above the WATCH threshold ${fmt(TH.watch)} °C, or it is daytime.`);
+  for (const [bit, text] of FLAGS) if (r.flags & (1 << bit)) why.push(text);
+  return why;
+}
+
+function headline(lvl) {
+  return ["Data not trustworthy", "No frost risk signalled", "Conditions to watch tonight",
+    "Frost likely tonight — prepare protection", "Frost expected soon — act now", "Air at the sensor is at or below 0 °C"][lvl] || "";
+}
+
+function contextText(r) {
+  const parts = [];
+  if (SKILL[r.level]) parts.push(SKILL[r.level]);
+  const h = localHour(r.unix_ts);
+  const key = h >= 18 && h < 21 ? "18" : h >= 21 ? "21" : h < 3 ? "0" : h < 9 ? "3" : null;
+  if (key && Number.isFinite(r.t_smooth) && r.t_smooth > 0) {
+    const b = HIST[key].find(([lo, hi]) => r.t_smooth > lo && r.t_smooth <= hi);
+    if (b) parts.push(`At the Bishkek city station, nights with ${b[0]}–${b[1]} °C around ${key.padStart(2, "0")}:00 reached 0 °C later in ${b[3]} of ${b[2]} cases (${Math.round(100 * b[3] / b[2])} %). Historical context for a different site, not a forecast.`);
+  }
+  parts.push("Time to frost is not shown: on the archive the cooling rate did not predict when frost starts.");
+  return parts.join(" ");
+}
+
+function render() {
+  const has = rows.length > 0;
+  $("empty").hidden = has; $("left").hidden = !has; $("right").hidden = !has;
+  if (!has) return;
+  const r = rows[rows.length - 1];
+  $("status").style.setProperty("--lvl", `var(${LEVEL_VAR[r.level] || "--unknown"})`);
+  $("level").textContent = LEVELS[r.level] || "?";
+  $("headline").textContent = headline(r.level);
+  $("why").innerHTML = explain(r).map((t) => `<li>${t}</li>`).join("");
+  $("context").textContent = contextText(r);
+
+  const tile = (k, v, u, d = 1) => `<div class="tile"><div class="k">${k}</div><div class="v">${fmt(v, d)}<span class="u">${u}</span></div></div>`;
+  $("tiles").innerHTML = tile("Air T", r.t, "°C") + tile("RH", r.rh, "%", 0) + tile("Dew point", r.td, "°C") +
+    tile("T − T<sub>d</sub>", r.d, "°C") + tile("R<sub>T</sub> 1 h", r.rt_1h, "°C/h", 2) + tile("R<sub>T</sub> 3 h", r.rt_3h, "°C/h", 2) +
+    tile("R<sub>D</sub> 1 h", r.rd_1h, "°C/h", 2) + (r.t <= 0 ? tile("Frost point", r.tf, "°C") : "");
+
+  const s = (n) => {
+    const ok = r["ok" + n] === 1 && !(r.flags & (1 << (n - 1)));
+    return `<div class="row"><span>DHT22 #${n}</span><span class="${ok ? "ok" : "bad"}">${ok ? `${fmt(r["t" + n])} °C · ${fmt(r["rh" + n], 0)} %` : "no valid reading"}</span></div>`;
+  };
+  const dT = r.t1 - r.t2, dRH = r.rh1 - r.rh2;
+  const both = r.ok1 === 1 && r.ok2 === 1;
+  $("sensors").innerHTML = s(1) + s(2) +
+    `<div class="row"><span>Difference #1 − #2</span><span class="${both && (Math.abs(dT) > 1 || Math.abs(dRH) > 5) ? "warn" : ""}">${both ? `${fmt(dT, 2)} °C · ${fmt(dRH, 1)} %` : "—"}</span></div>` +
+    `<p class="sub">Two identical DHT22 can share the same bias: agreement means consistency, not proof of accuracy.</p>`;
+  renderHealth(r);
+
+  const t1 = r.unix_ts, t0 = Math.max(rows[0].unix_ts, hoursShown ? t1 - hoursShown * 3600 : 0);
+  const win = rows.filter((x) => x.unix_ts >= t0);
+  const pts = (k) => win.map((x) => [x.unix_ts, x[k]]);
+  lineChart($("chartT"), [{ c: "--t", p: pts("t") }, { c: "--td", p: pts("td") }], t0, t1,
+    [[TH.watch, "--watch"], [TH.warning, "--warning"], [TH.critical, "--critical"], [TH.frost, "--frost"]], win);
+  lineChart($("chartD"), [{ c: "--d", p: pts("d") }, { c: "--rate", p: pts("rt_1h") }], t0, t1, [[0, "--muted"]], null);
+}
+
+function renderHealth(r) {
+  const q = ["good (both sensors agree)", "degraded (one sensor or disagreement)", "bad (no valid data)"][r.quality] || "?";
+  const age = live ? Math.round((Date.now() - lastRx) / 1000) : null;
+  $("health").innerHTML =
+    `<div class="row"><span>Data quality</span><span class="${["ok", "warn", "bad"][r.quality]}">${q}</span></div>` +
+    `<div class="row"><span>Last sample</span><span>${localTime(r.unix_ts)} local${age !== null ? ` · ${age} s ago` : ""}</span></div>` +
+    (age !== null && age > 180 ? `<div class="row"><span>Link</span><span class="bad">no data for ${age} s — level is stale</span></div>` : "") +
+    `<div class="row"><span>ESP-NOW failed sends in a row</span><span class="${r.send_fail_streak > 0 ? "warn" : ""}">${fmt(r.send_fail_streak, 0)}</span></div>` +
+    `<div class="row"><span>Clock</span><span class="${r.time_valid ? "" : "warn"}">${r.time_valid ? "set" : "not set"}</span></div>` +
+    `<div class="row"><span>Thresholds</span><span>${r.calibrated ? "calibrated (local data)" : "initial (regional archive)"}</span></div>` +
+    `<div class="row"><span>Node / boot / seq</span><span>${fmt(r.node_id, 0)} / ${fmt(r.boot_id, 0)} / ${fmt(r.seq, 0)}</span></div>`;
+}
+
+function lineChart(el, series, t0, t1, hlines, levelRows) {
+  const W = 760, H = 240, L = 40, R = 10, T = 10, B = levelRows ? 40 : 26;
+  const ys = series.flatMap((s) => s.p.map((p) => p[1])).concat(hlines.map((h) => h[0])).filter(Number.isFinite);
+  if (!ys.length) { el.innerHTML = '<p class="sub">no values in this range</p>'; return; }
+  let y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const pad = Math.max(0.5, (y1 - y0) * 0.08); y0 -= pad; y1 += pad;
+  const X = (t) => L + ((t - t0) / Math.max(1, t1 - t0)) * (W - L - R);
+  const Y = (v) => T + (1 - (v - y0) / (y1 - y0)) * (H - T - B);
+  let g = "";
+  const step = niceStep((y1 - y0) / 5);
+  for (let v = Math.ceil(y0 / step) * step; v <= y1; v += step) {
+    g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css("--grid")}"/><text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end">${+v.toFixed(2)}</text>`;
+  }
+  const span = t1 - t0, tick = span > 2 * 86400 ? 6 * 3600 : span > 12 * 3600 ? 3 * 3600 : 3600;
+  for (let t = Math.ceil((t0 + TZ_OFFSET_S) / tick) * tick - TZ_OFFSET_S; t <= t1; t += tick) {
+    g += `<text x="${X(t)}" y="${H - B + 14}" text-anchor="middle">${localTime(t).slice(6)}</text>`;
+  }
+  for (const [v, c] of hlines) g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css(c)}" stroke-dasharray="5 4" opacity=".8"/>`;
+  for (const s of series) {
+    let d = "", pen = false, prev = null;
+    for (const [t, v] of s.p) {
+      if (!Number.isFinite(v) || (prev !== null && t - prev > 600)) { pen = false; }
+      if (Number.isFinite(v)) { d += `${pen ? "L" : "M"}${X(t).toFixed(1)},${Y(v).toFixed(1)}`; pen = true; }
+      prev = t;
+    }
+    g += `<path d="${d}" fill="none" stroke="${css(s.c)}" stroke-width="2" stroke-linejoin="round"/>`;
+  }
+  if (levelRows) {  // level timeline strip under the axis
+    const yb = H - 16;
+    for (let i = 0; i < levelRows.length; i++) {
+      const a = levelRows[i], b = levelRows[i + 1];
+      const xe = b && b.unix_ts - a.unix_ts <= 600 ? X(b.unix_ts) : X(a.unix_ts) + 2;
+      g += `<rect x="${X(a.unix_ts)}" y="${yb}" width="${Math.max(1, xe - X(a.unix_ts))}" height="10" fill="${css(LEVEL_VAR[a.level])}"/>`;
+    }
+    g += `<text x="${L - 6}" y="${yb + 9}" text-anchor="end">level</text>`;
+  }
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
+}
+function niceStep(x) { const p = 10 ** Math.floor(Math.log10(x)); const m = x / p; return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p; }
+</script>
+</body>
+</html>

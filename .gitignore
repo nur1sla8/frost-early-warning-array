@@ -1,0 +1,10 @@
+firmware/host_tests/test_core
+firmware/host_tests/replay_cli
+__pycache__/
+*.pyc
+.DS_Store
+data/replay/*_out.csv
+# reproducible / third-party data: see README (curl + tools/make_replay.py)
+data/raw/
+data/replay/
+.claude/
