@@ -11,6 +11,7 @@ gateway and a browser dashboard.
 - archive study done;
 - firmware core tested on PC;
 - ESP32-S3 build compiles;
+- breadboard prototype assembled ([photos](#prototype-photos));
 - **hardware tests pending.**
 
 ## Research question
@@ -96,6 +97,25 @@ Full method, tables and limits: [`docs/RESEARCH.md`](docs/RESEARCH.md).
   firmware catch a failing sensor.
 - Later, optionally, at two heights to see the night-time inversion.
 - Two identical DHT22s can share the same bias. Their agreement shows consistency, not accuracy.
+
+## Prototype photos
+
+Breadboard prototype of the sensor node: an ESP32 dev board and two DHT22 sensors side by side, powered
+and programmed over USB.
+
+![Assembled breadboard prototype: ESP32 dev board with two DHT22 sensors](docs/images/breadboard-prototype.jpg)
+
+*Assembled node on a breadboard: ESP32 board (left) and two DHT22 sensors (right), connected as in the
+[wiring](#wiring-esp32-s3) section.*
+
+Parts used before assembly:
+
+![Parts: ESP32 board, two DHT22 sensors, breadboard, pull-up resistors, jumper wires, USB cable](docs/images/components.jpg)
+
+*ESP32 board, 2 × DHT22, breadboard, pull-up resistors, jumper wires and a USB cable.*
+
+These photos show the assembled hardware only. Bench and field measurements are still pending (see
+[`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)).
 
 ## Build and flash (Arduino IDE)
 
