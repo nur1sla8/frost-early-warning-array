@@ -46,6 +46,7 @@ Wiring:
 The sensors are powered from GPIO pins so the code can power-cycle a sensor that hangs. If you want to
 use 3V3 directly, set `DHT*_POWER_PIN -1` in `firmware/frost_node/config.h`.
 
+## How it works
 
 1. Each DHT22 is read and checked (value range, sudden spikes, stuck output).
 2. If both sensors agree (within 1 °C and 5 % RH) the average is used. If they disagree, the colder one is
