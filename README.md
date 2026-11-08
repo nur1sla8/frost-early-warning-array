@@ -7,8 +7,6 @@ dashboard.
 Course project: ELT.123 Electronic Components and Circuits, Ala-Too International University.
 Author: Nurislam ([@nur1sla8](https://github.com/nur1sla8)).
 
-> [!NOTE]
-> Hardware tests are still pending. The firmware compiles and its core is tested on a PC.
 
 ## Photos
 
@@ -20,20 +18,7 @@ Parts: ESP32 board, 2 × DHT22, breadboard, pull-up resistors, jumper wires and 
 
 ![Parts: ESP32 board, two DHT22 sensors, breadboard, pull-up resistors, jumper wires, USB cable](docs/images/components.jpg)
 
-## How it works
 
-```
- Sensor node (ESP32-S3)                                  Gateway (ESP32)            PC / phone
-┌─────────────────────────────────────────┐  ESP-NOW   ┌───────────────────┐ USB  ┌────────────────────┐
-│ DHT22 #1 ─┐   QC: range, spike, stuck    │  star,     │ CRC + dedupe      │────▶ │ serial_logger.py   │
-│ DHT22 #2 ─┴─▶ fusion (agree / colder)    │  1 frame/  │ loss from seq gaps│      │ dashboard.html     │
-│               Magnus Td, frost point     │  min ────▶ │ OFFLINE after 3 m │      │ (Web Serial / CSV) │
-│               trends R_T, R_D (1 h, 3 h) │ ◀──────────│ time beacon / min │      │ threshold_study.py │
-│               levels + hysteresis        │  beacon    └───────────────────┘      └────────────────────┘
-│ LittleFS CSV log (2-file ring), NVS cfg  │
-│ Serial: D-rows, commands, REPLAY mode    │
-└─────────────────────────────────────────┘
-```
 
 **1. Dew point.** Magnus formula (Sonntag 1990 coefficients, as in WMO-No. 8):
 
