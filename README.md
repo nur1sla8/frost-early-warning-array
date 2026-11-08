@@ -25,7 +25,7 @@ Parts used: ESP32 board, 2 x DHT22, breadboard, pull-up resistors, jumper wires,
 
 ![Parts](docs/images/components.jpg)
 
-Short bench demo (10 s): [docs/videos/prototype-demo.mp4](docs/videos/prototype-demo.mp4)
+Short bench demo (10 s, download and watch): [docs/videos/IMG_6533.MP4](docs/videos/IMG_6533.MP4)
 
 ## 3D model
 
