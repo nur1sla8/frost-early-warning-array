@@ -38,16 +38,20 @@ and raise graded warnings of night-time frost.**
 
 <div align="center">
 
-<video src="https://github.com/nur1sla8/frost-early-warning-array/raw/main/docs/videos/prototype-demo.mp4" controls muted width="720"></video>
+<a href="docs/videos/prototype-demo.mp4">
+  <img src="docs/images/prototype-demo.gif" alt="Prototype demo: the dashboard shows temperature, humidity, dew point and the warning level changing from NORMAL to WATCH" width="640">
+</a>
+
+<sub>▶ Click the animation to open the full video (10 s, MP4)</sub>
 
 </div>
 
 The prototype from the [photos](#prototype-photos) below, running: the ESP32 node is connected over USB and
 the browser dashboard ([`tools/dashboard.html`](tools/dashboard.html)) shows temperature, humidity, the
-computed dew point and the current warning level (here **NORMAL**), next to the live serial output.
+computed dew point and the current warning level, next to the live serial output. In the clip the level
+changes from **NORMAL** to **WATCH**.
 
 > [!NOTE]
-> If the player does not load, open the file directly: [`docs/videos/prototype-demo.mp4`](docs/videos/prototype-demo.mp4).
 > This is a short bench demo only. Bench and field measurements are still pending (see
 > [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)).
 
