@@ -1,31 +1,69 @@
-# Frost Early-Warning Array
+<div align="center">
 
-Low-cost ESP32-S3 nodes with two DHT22 sensors that compute the dew point on board, track air-temperature
-and dew-point trends, and raise graded warnings of night-time frost. Telemetry goes over ESP-NOW to a
-gateway and a browser dashboard.
+# ❄️ Frost Early-Warning Array
 
-**Course:** ELT.123 Electronic Components and Circuits, Ala-Too International University
-**Author:** Nurislam ([@nur1sla8](https://github.com/nur1sla8))
-**Status:**
+**Low-cost ESP32-S3 nodes that compute the dew point on board, track temperature and dew-point trends,<br>
+and raise graded warnings of night-time frost.**
 
-- archive study done;
-- firmware core tested on PC;
-- ESP32-S3 build compiles;
-- breadboard prototype assembled ([photos](#prototype-photos));
-- **hardware tests pending.**
+![ESP32-S3](https://img.shields.io/badge/ESP32--S3-E7352C?style=for-the-badge&logo=espressif&logoColor=white)
+![ESP-NOW](https://img.shields.io/badge/ESP--NOW-star%20topology-0A66C2?style=for-the-badge)
+![C++](https://img.shields.io/badge/C%2B%2B-FrostCore-00599C?style=for-the-badge&logo=cplusplus&logoColor=white)
+![Python](https://img.shields.io/badge/Python-analysis-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Status](https://img.shields.io/badge/hardware%20tests-pending-F59E0B?style=for-the-badge)
+
+[Demo](#demo-video) · [Research](#research-question) · [Architecture](#architecture) · [Hardware](#hardware) · [Build](#build-and-flash-arduino-ide) · [How it works](#how-it-works)
+
+<sub>Telemetry goes over ESP-NOW to a gateway and a browser dashboard.</sub>
+
+</div>
+
+---
+
+| | |
+|---|---|
+| 🎓 **Course** | ELT.123 Electronic Components and Circuits, Ala-Too International University |
+| 👤 **Author** | Nurislam ([@nur1sla8](https://github.com/nur1sla8)) |
+
+### Status
+
+| Stage | State |
+|---|---|
+| Archive study | ✅ done |
+| Firmware core tested on PC | ✅ done |
+| ESP32-S3 build | ✅ compiles |
+| Breadboard prototype | ✅ assembled ([photos](#prototype-photos), [video](#demo-video)) |
+| Hardware tests | ⏳ **pending** |
+
+## Demo video
+
+<div align="center">
+
+<video src="https://github.com/nur1sla8/frost-early-warning-array/raw/main/docs/videos/prototype-demo.mp4" controls muted width="720"></video>
+
+</div>
+
+The prototype from the [photos](#prototype-photos) below, running: the ESP32 node is connected over USB and
+the browser dashboard ([`tools/dashboard.html`](tools/dashboard.html)) shows temperature, humidity, the
+computed dew point and the current warning level (here **NORMAL**), next to the live serial output.
+
+> [!NOTE]
+> If the player does not load, open the file directly: [`docs/videos/prototype-demo.mp4`](docs/videos/prototype-demo.mp4).
+> This is a short bench demo only. Bench and field measurements are still pending (see
+> [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)).
 
 ## Research question
 
 > What rate of temperature drop and dew-point convergence reliably triggers early warnings?
 
-**Short answer (Bishkek station 2005–2025, 1993 frost-season nights, 583 frost events, 3-hourly data):**
-
-- Neither the cooling rate nor the rate of dew-point convergence improved warnings beyond the
-  temperature level and the time of night.
-- Requiring a cooling rate of 0.5–1.5 °C/h on top of "T ≤ 3 °C" removed 23–82 % of the correctly
-  warned frost nights, with no real gain in precision.
-- The dew point helps as a **level**: a high Td slows cooling. It does not help as a rate.
-- Sub-hourly rates, which our sensors measure, are still an open hypothesis for local data.
+> [!IMPORTANT]
+> **Short answer** (Bishkek station 2005–2025, 1993 frost-season nights, 583 frost events, 3-hourly data):
+>
+> - Neither the cooling rate nor the rate of dew-point convergence improved warnings beyond the
+>   temperature level and the time of night.
+> - Requiring a cooling rate of 0.5–1.5 °C/h on top of "T ≤ 3 °C" removed 23–82 % of the correctly
+>   warned frost nights, with no real gain in precision.
+> - The dew point helps as a **level**: a high Td slows cooling. It does not help as a rate.
+> - Sub-hourly rates, which our sensors measure, are still an open hypothesis for local data.
 
 Full method, tables and limits: [`docs/RESEARCH.md`](docs/RESEARCH.md).
 
@@ -44,18 +82,20 @@ Full method, tables and limits: [`docs/RESEARCH.md`](docs/RESEARCH.md).
 └─────────────────────────────────────────┘
 ```
 
-**ESP-NOW is used as a star, not a mesh.**
+> [!NOTE]
+> **ESP-NOW is used as a star, not a mesh.**
+>
+> - ESP-NOW has no routing, so every node must be in radio range of the gateway.
+> - Frames are 54 bytes and carry CRC-16, node id, boot id and sequence number.
+> - Unicast to the gateway MAC gives a link-layer ACK; the default broadcast does not.
+> - If range ever needs relaying, add a repeater node that forwards frames, or switch to ESP-WIFI-MESH.
 
-- ESP-NOW has no routing, so every node must be in radio range of the gateway.
-- Frames are 54 bytes and carry CRC-16, node id, boot id and sequence number.
-- Unicast to the gateway MAC gives a link-layer ACK; the default broadcast does not.
-- If range ever needs relaying, add a repeater node that forwards frames, or switch to ESP-WIFI-MESH.
-
-**Only one ESP32 is available now.** Therefore:
-
-- the gateway sketch is written but untested;
-- the node works stand-alone over USB;
-- the dashboard reads the node directly.
+> [!WARNING]
+> **Only one ESP32 is available now.** Therefore:
+>
+> - the gateway sketch is written but untested;
+> - the node works stand-alone over USB;
+> - the dashboard reads the node directly.
 
 ## Hardware
 
@@ -115,7 +155,7 @@ Parts used before assembly:
 *ESP32 board, 2 × DHT22, breadboard, pull-up resistors, jumper wires and a USB cable.*
 
 These photos show the assembled hardware only. Bench and field measurements are still pending (see
-[`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)).
+[`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)). The prototype in action: [demo video](#demo-video).
 
 ## Build and flash (Arduino IDE)
 
@@ -139,7 +179,8 @@ library 1.4.7 and Adafruit Unified Sensor 1.1.15, with zero warnings from projec
 | gateway | ESP32-S3 | 872 KB (66 %) | – |
 | gateway | ESP32 | 888 KB (67 %) | – |
 
-The sketches have **not been run on hardware yet**. The core 2.x code paths (IDF 4.4) are not compiled.
+> [!CAUTION]
+> The sketches have **not been run on hardware yet**. The core 2.x code paths (IDF 4.4) are not compiled.
 
 Command-line build:
 
