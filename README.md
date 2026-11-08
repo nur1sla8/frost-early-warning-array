@@ -25,7 +25,19 @@ Parts used: ESP32 board, 2 x DHT22, breadboard, pull-up resistors, jumper wires,
 
 ![Parts](docs/images/components.jpg)
 
-Short bench demo (10 s): [docs/videos/prototype-demo.mp4](docs/videos/prototype-demo.mp4)
+Short bench demo (10 s, download and watch): [docs/videos/IMG_6533.MP4](docs/videos/IMG_6533.MP4)
+
+## 3D model
+
+For outdoor use the sensors need a radiation shield, so they do not read the sun or the cold night sky
+instead of the air. I designed a simple one: 4 conical plates and a roof, stacked on 3 M3 rods with
+spacers. The air goes through the gaps and the centre hole, the rain runs off the cones.
+
+![Radiation shield, cutaway view with two DHT22 (blue) for scale](docs/images/shield-3d.png)
+
+Files are in `cad/`: `shield_plate.stl` (print 4), `shield_cap.stl` (print 1), `shield_spacer.stl` (print
+12) and `shield_assembly.stl` for the whole thing. The sizes are parameters in `cad/make_shield.py`
+(needs `trimesh`, `manifold3d`, `numpy`, `matplotlib`). Not printed yet, so the fit is not tested.
 
 ## Hardware
 
@@ -129,6 +141,7 @@ What is not done:
 
 ```
 analysis/   Python code for the archive study
+cad/        3D model of the radiation shield (STL + generator script)
 data/       archive data and replay files
 docs/       research, test plan, images, video
 firmware/   node and gateway sketches, FrostCore library, PC tests
