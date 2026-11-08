@@ -1,68 +1,139 @@
-# ❄️ Frost Early-Warning Array
+# Frost Early-Warning Array
 
-Low-cost ESP32-S3 nodes that compute the dew point on board, track temperature and dew-point trends,
-and raise graded warnings of night-time frost. Telemetry goes over ESP-NOW to a gateway and a browser
-dashboard.
+Course project for ELT.123 Electronic Components and Circuits, Ala-Too International University.
+Author: Nurislam (@nur1sla8).
 
-Course project: ELT.123 Electronic Components and Circuits, Ala-Too International University.
-Author: Nurislam ([@nur1sla8](https://github.com/nur1sla8)).
+## About
 
-> [!NOTE]
-> Hardware tests are still pending. The firmware compiles and its core is tested on a PC.
+Night frost can kill crops, and it often happens when the air looks fine in the evening. This project is a
+small sensor node on an ESP32-S3 that measures temperature and humidity with two DHT22 sensors,
+calculates the dew point, and gives a warning level (NORMAL, WATCH, WARNING, CRITICAL, FROST) when the
+temperature falls toward freezing at night. Nodes can send data over ESP-NOW to a second ESP32 (the
+gateway), and a web page shows everything live.
+
+Current state: the prototype is built on a breadboard, the code compiles and the core logic is tested on a PC.
+I only have one ESP32 so far, so the gateway code is written but not tested, and tests outside on real
+nights are still to do.
 
 ## Photos
 
-Assembled breadboard prototype: an ESP32 dev board (left) and two DHT22 sensors (right).
+Breadboard prototype: ESP32 board and two DHT22 sensors, powered over USB.
 
-![Assembled breadboard prototype: ESP32 dev board with two DHT22 sensors](docs/images/breadboard-prototype.jpg)
+![Breadboard prototype](docs/images/breadboard-prototype.jpg)
 
-Parts: ESP32 board, 2 × DHT22, breadboard, pull-up resistors, jumper wires and a USB cable.
+Parts used: ESP32 board, 2 x DHT22, breadboard, pull-up resistors, jumper wires, USB cable.
 
-![Parts: ESP32 board, two DHT22 sensors, breadboard, pull-up resistors, jumper wires, USB cable](docs/images/components.jpg)
+![Parts](docs/images/components.jpg)
+
+Short bench demo (10 s): [docs/videos/prototype-demo.mp4](docs/videos/prototype-demo.mp4)
+
+## Hardware
+
+- ESP32-S3 dev board (a second ESP32 for the gateway)
+- 2 x DHT22 (AM2302)
+- 2 x resistor 4.7k to 10k, as pull-ups on the DATA lines
+- a radiation shield for outdoor use (white plates or a louvred box)
+
+Wiring:
+
+| DHT22 pin | Sensor 1 | Sensor 2 |
+|---|---|---|
+| 1 VCC | GPIO6 | GPIO7 |
+| 2 DATA | GPIO4 + pull-up to VCC | GPIO5 + pull-up to VCC |
+| 3 NC | not connected | not connected |
+| 4 GND | GND | GND |
+
+The sensors are powered from GPIO pins so the code can power-cycle a sensor that hangs. If you want to
+use 3V3 directly, set `DHT*_POWER_PIN -1` in `firmware/frost_node/config.h`.
 
 ## How it works
 
+1. Each DHT22 is read and checked (value range, sudden spikes, stuck output).
+2. If both sensors agree (within 1 °C and 5 % RH) the average is used. If they disagree, the colder one is
+   used. If only one works, that one is used.
+3. The dew point is calculated with the Magnus formula:
+
+   ```
+   g  = ln(RH/100) + 17.62*T / (243.12 + T)
+   Td = 243.12*g / (17.62 - g)
+   ```
+
+4. The warning level is picked from the 10-minute average temperature between 18:00 and 09:00, with 0.5 °C
+   hysteresis so it does not flicker:
+
+   | Level | Rule |
+   |---|---|
+   | WATCH | T <= 4 °C |
+   | WARNING | T <= 3 °C |
+   | CRITICAL | T <= 2 °C |
+   | FROST | T <= 0 °C |
+
+5. The node prints a line to Serial every minute, saves a log to flash, and sends a packet over ESP-NOW to
+   the gateway. `tools/dashboard.html` shows the data in the browser.
+
+The thresholds come from an analysis of the Bishkek weather station archive (2005-2025). Method and
+tables are in [docs/RESEARCH.md](docs/RESEARCH.md).
+
+## Build and run
+
+1. Install Arduino IDE 2 and the "esp32 by Espressif Systems" board package.
+2. In Preferences set the sketchbook location to the `firmware/` folder of this repo.
+3. Install the libraries "DHT sensor library" (Adafruit) and "Adafruit Unified Sensor".
+4. Open `firmware/frost_node/frost_node.ino`. Select board "ESP32S3 Dev Module", turn on "USB CDC On Boot"
+   and pick a partition scheme with SPIFFS (for example "Default 4MB with spiffs").
+5. Upload, then open the Serial Monitor at 115200 baud. Type `HELP` to see the commands.
+
+To log data on a PC and see the dashboard:
+
 ```
- Sensor node (ESP32-S3)                                  Gateway (ESP32)            PC / phone
-┌─────────────────────────────────────────┐  ESP-NOW   ┌───────────────────┐ USB  ┌────────────────────┐
-│ DHT22 #1 ─┐   QC: range, spike, stuck    │  star,     │ CRC + dedupe      │────▶ │ serial_logger.py   │
-│ DHT22 #2 ─┴─▶ fusion (agree / colder)    │  1 frame/  │ loss from seq gaps│      │ dashboard.html     │
-│               Magnus Td, frost point     │  min ────▶ │ OFFLINE after 3 m │      │ (Web Serial / CSV) │
-│               trends R_T, R_D (1 h, 3 h) │ ◀──────────│ time beacon / min │      │ threshold_study.py │
-│               levels + hysteresis        │  beacon    └───────────────────┘      └────────────────────┘
-│ LittleFS CSV log (2-file ring), NVS cfg  │
-│ Serial: D-rows, commands, REPLAY mode    │
-└─────────────────────────────────────────┘
+python3 tools/serial_logger.py <serial port> data/logs/night_01.csv
 ```
 
-**1. Dew point.** Magnus formula (Sonntag 1990 coefficients, as in WMO-No. 8):
+Then open `tools/dashboard.html` in Chrome or Edge and press "Connect ESP32" (or "Open CSV log").
+
+Tests that need no hardware:
 
 ```
-γ  = ln(RH/100) + 17.62·T / (243.12 + T)        Td = 243.12·γ / (17.62 − γ)
-D  = T − Td        R_T = dT/dt,  R_D = dD/dt   (least-squares slope over 1 h and 3 h)
+make -C firmware/host_tests test
 ```
 
-**2. Sensor QC and fusion.** Each reading passes a range check, spike rejection and stuck-output
-detection. Then:
+This runs 50 unit checks of the core code (`firmware/libraries/FrostCore`).
 
-- both sensors agree (≤ 1 °C and ≤ 5 % RH): the mean is used, quality GOOD;
-- they disagree: the colder sensor is used, DEGRADED;
-- only one is valid: that one is used, DEGRADED;
-- none is valid: level UNKNOWN.
+## Results
 
-**3. Warning levels.** Decided on the 10-min mean temperature in the 18:00–09:00 local window, with
-0.5 °C hysteresis. Thresholds come from a Bishkek archive study (2005–2025); recall and false-alarm
-ratio are on the test years 2020–2025:
+What works:
 
-| Level | Rule | Recall | False-alarm ratio |
-|---|---|---|---|
-| WATCH | T ≤ 4.0 °C | 0.94 | 0.44 |
-| WARNING | T ≤ 3.0 °C | 0.90 | 0.34 |
-| CRITICAL | T ≤ 2.0 °C | 0.75 | 0.29 |
-| FROST | T ≤ 0 °C | detection, not a forecast | – |
+- Two-sensor reading, dew point and warning levels (tested on PC and compiled for ESP32-S3).
+- Replay of real archive data through the C++ code gives the same result as the Python reference.
+- Prototype is assembled and the dashboard shows live values from the board.
 
-Cooling rate and dew-point convergence did not improve warnings beyond the temperature level and the
-time of night, so they are reported as context flags and do not change the level.
+What was found in the archive study (1993 frost-season nights, 583 frost events): the cooling rate and
+the dew-point rate did not make warnings better than just using the temperature and the time of night.
+A high dew point slows cooling, but only as a level, not as a rate. That is why the rates are only shown
+as extra info and do not change the warning level.
 
-**4. Transport.** ESP-NOW is used as a star, not a mesh: every node must be in radio range of the
-gateway. Frames are 54 bytes with CRC-16, node id, boot id and sequence number.
+What is not done:
+
+- Tests on real hardware outside (bench and night measurements). Test plan is in
+  [docs/TEST_PLAN.md](docs/TEST_PLAN.md).
+- Gateway is untested because I have only one ESP32.
+
+## Limitations
+
+- It measures air temperature only, not leaf or soil temperature.
+- No cloud or wind sensor, so it cannot tell a clear calm night from cold wind.
+- DHT22 humidity is not accurate near 100 %, so small T - Td values (below about 1 °C) are not reliable.
+- The thresholds are from a city station with 3-hour data, so they should be rechecked with local data.
+
+## Repository
+
+```
+analysis/   Python code for the archive study
+data/       archive data and replay files
+docs/       research, test plan, images, video
+firmware/   node and gateway sketches, FrostCore library, PC tests
+results/    tables and figures from the study
+tools/      serial logger, replay tools, dashboard.html
+```
+
+Weather data: Meteostat (CC BY-NC 4.0).
